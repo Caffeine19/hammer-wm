@@ -1,14 +1,13 @@
-import { showHUD } from "@raycast/api";
+import { closeMainWindow, showHUD } from "@raycast/api";
 import { callHammerspoon } from "./utils/call-hammerspoon";
 
 export default async function removeCurrentSpace() {
   try {
     const code = `
 -- space.lua: Space management utilities for Hammerspoon
-local space = {}
 
 -- Remove the current space (move to previous, then remove original)
-function space.removeCurrentSpace()
+local function removeCurrentSpace()
     local currentFocusedSpaceId = hs.spaces.focusedSpace()
     local currentScreen = hs.screen.mainScreen()
     local spacesInCurrentScreen = hs.spaces.spacesForScreen(currentScreen)
@@ -39,13 +38,22 @@ function space.removeCurrentSpace()
 end
 
 -- call
-space.removeCurrentSpace()
+
+removeCurrentSpace()
 `;
+    // close main window because we will enter mission control
+    closeMainWindow();
 
     await callHammerspoon(code);
+    // close raycast window
     await showHUD("Space removed successfully");
   } catch (error) {
     console.error("Error removing space:", error);
-    await showHUD(`Failed to remove space: ${error}`);
+    showHUD(`Failed to remove space: ${error}`);
+
+    // await showFailureToast(error, {
+    //   title: "Failed to remove space",
+    //   message: String(error),
+    // });
   }
 }

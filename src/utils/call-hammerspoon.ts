@@ -9,9 +9,17 @@ export async function callHammerspoon(code: string) {
     .replace(/\t/g, "\\t"); // Replace tabs
 
   const res = await runAppleScript(`
-        tell application "Hammerspoon"
-            execute lua code "${escapedCode}"
-        end tell
+        try
+            tell application "Hammerspoon"
+                execute lua code "${escapedCode}"
+            end tell
+        on error errMsg
+            return "HAMMERSPOON_ERROR: " & errMsg
+        end try
     `);
+  console.log("Hammerspoon result:", res);
+  if (typeof res === "string" && res.startsWith("HAMMERSPOON_ERROR:")) {
+    throw new Error(res.replace("HAMMERSPOON_ERROR: ", ""));
+  }
   return res;
 }
