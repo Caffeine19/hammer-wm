@@ -169,10 +169,15 @@ export default function Command() {
       return;
     }
 
+    setIsLoading(true);
     setLoadingWindows((prev) => ({ ...prev, [spaceId]: true }));
     await sleep(100);
     const [err, windows] = await tryit(getSpaceWindows)(spaceId);
     setLoadingWindows((prev) => ({ ...prev, [spaceId]: false }));
+    (async () => {
+      await sleep(200);
+      setIsLoading(false);
+    })();
 
     if (err) {
       showFailureToast(err);

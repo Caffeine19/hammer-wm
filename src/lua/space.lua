@@ -96,4 +96,40 @@ function space.listSpaces()
     return hs.json.encode(spaces)
 end
 
+function space.getSpaceWindows(spaceId)
+    local windows = {}
+    print("Fetching windows for space ID:", spaceId)
+    local windowsInSpace = hs.spaces.windowsForSpace(spaceId)
+    print("Windows in space:", hs.inspect(windowsInSpace), spaceId)
+
+    -- Use window filter to get windows from non-visible spaces
+    local windowFilter = hs.window.filter.new()
+    local allWindows = windowFilter:getWindows()
+    
+    -- Create a lookup table for all windows by ID
+    local windowLookup = {}
+    for _, window in ipairs(allWindows) do
+        if window:id() then
+            windowLookup[window:id()] = window
+        end
+    end
+
+    for _, windowId in ipairs(windowsInSpace) do
+        local window = windowLookup[windowId]
+        print("Processing window ID:", windowId, "Window found:", window ~= nil)
+        if window then
+            local app = window:application()
+            table.insert(windows, {
+                id = tostring(windowId),
+                title = window:title() or "Untitled",
+                application = app and app:name() or "Unknown",
+                isMinimized = window:isMinimized(),
+                isFullscreen = window:isFullscreen()
+            })
+        end
+    end
+
+    return hs.json.encode(windows)
+end
+
 return space

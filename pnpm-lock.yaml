@@ -14,6 +14,9 @@ importers:
       '@raycast/utils':
         specifier: ^1.17.0
         version: 1.19.1(@raycast/api@1.101.0(@types/node@22.13.10)(@types/react@19.0.10))
+      radash:
+        specifier: ^12.1.1
+        version: 12.1.1
     devDependencies:
       '@raycast/eslint-config':
         specifier: ^2.0.4
@@ -940,6 +943,10 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
+
+  radash@12.1.1:
+    resolution: {integrity: sha512-h36JMxKRqrAxVD8201FrCpyeNuUY9Y5zZwujr20fFO77tpUtGa6EZzfKw/3WaiBX95fq7+MpsuMLNdSnORAwSA==}
+    engines: {node: '>=14.18.0'}
 
   react@19.0.0:
     resolution: {integrity: sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==}
@@ -1962,6 +1969,8 @@ snapshots:
   punycode@2.3.1: {}
 
   queue-microtask@1.2.3: {}
+
+  radash@12.1.1: {}
 
   react@19.0.0: {}
 

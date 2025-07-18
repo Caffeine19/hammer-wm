@@ -127,11 +127,27 @@ export async function listSpace(): Promise<Space[]> {
 export async function getSpaceWindows(spaceId: Space["id"]): Promise<Window[]> {
   console.log("🚀 ~ space.ts:128 ~ getSpaceWindows ~ spaceId:", spaceId);
   const code = /* lua */ `
+    local spaceId=${spaceId}
     local windows = {}
-    local windowsInSpace = hs.spaces.windowsForSpace(${spaceId})
+    print("Fetching windows for space ID:", spaceId)
+    local windowsInSpace = hs.spaces.windowsForSpace(spaceId)
+    print("Windows in space:", hs.inspect(windowsInSpace), spaceId)
+
+    -- Use window filter to get windows from non-visible spaces
+    local windowFilter = hs.window.filter.new()
+    local allWindows = windowFilter:getWindows()
     
+    -- Create a lookup table for all windows by ID
+    local windowLookup = {}
+    for _, window in ipairs(allWindows) do
+        if window:id() then
+            windowLookup[window:id()] = window
+        end
+    end
+
     for _, windowId in ipairs(windowsInSpace) do
-        local window = hs.window.get(windowId)
+        local window = windowLookup[windowId]
+        print("Processing window ID:", windowId, "Window found:", window ~= nil)
         if window then
             local app = window:application()
             table.insert(windows, {
@@ -141,8 +157,9 @@ export async function getSpaceWindows(spaceId: Space["id"]): Promise<Window[]> {
                 isMinimized = window:isMinimized(),
                 isFullscreen = window:isFullscreen()
             })
-        end
+          end
     end
+
     
     return hs.json.encode(windows)
   `;
