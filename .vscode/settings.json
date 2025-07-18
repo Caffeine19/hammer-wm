@@ -1,5 +1,10 @@
 {
     "cSpell.words": [
-        "Hammerspoon"
+        "Hammerspoon",
+        "ipairs",
+        "radash"
+    ],
+    "Lua.diagnostics.globals": [
+        "hs"
     ]
 }

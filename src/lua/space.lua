@@ -27,22 +27,26 @@ function space.removeCurrentSpace()
 
     local newActiveSpace = hs.spaces.activeSpaceOnScreen(currentScreen)
     print("New active space after switching: ", newActiveSpace)
+
+    -- shouldn't use doAfter here, because the error wont be caught
+    -- so if use this func in js, you need to split it into two steps
+    -- and use the first step to switch space, then use the second step to remove space
+    -- between the two steps, use `sleep` from `radash` to replace the `doAfter` 
     hs.timer.doAfter(0.1, function()
-        -- Wait for 100 milliseconds before removing the original space
-        -- This allows the switch to complete before we attempt to remove the space
         print("Removing original space: ", currentActiveSpaceOnCurrentScreen)
         local ok, err = hs.spaces.removeSpace(currentActiveSpaceOnCurrentScreen)
         if not ok then
             print("Remove failed: " .. tostring(err))
             error("Failed to remove space: " .. tostring(err))
         end
+
+        return "OK"
     end)
 end
 
 function space.createSpace()
     -- Get the current focused space and screen
     local currentScreen = hs.screen.mainScreen()
-    local currentSpace = hs.spaces.activeSpaceOnScreen(currentScreen)
 
     -- Add a new space to the current screen
     hs.spaces.addSpaceToScreen(currentScreen, false)
@@ -74,11 +78,16 @@ function space.listSpaces()
     local spaceNames = hs.spaces.missionControlSpaceNames()
 
     for screenUUID, screenSpaces in pairs(spaceNames) do
+        -- Get screen object and its name
+        local screen = hs.screen.find(screenUUID)
+        local screenName = screen and screen:name() or "Unknown Screen"
+
         for spaceId, spaceName in pairs(screenSpaces) do
             table.insert(spaces, {
                 id = tostring(spaceId),
                 name = spaceName,
                 screenId = screenUUID,
+                screenName = screenName,
                 isCurrent = spaceId == currentSpace
             })
         end

@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        // Lua 
+        "sumneko.lua",
+        // Highlight code in js template strings
+        "bierner.comment-tagged-templates",
+        // Applescript
+        "idleberg.applescript"
+    ]
+}
