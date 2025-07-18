@@ -161,12 +161,24 @@ export async function getSpaceWindows(spaceId: Space["id"]): Promise<Window[]> {
         print("Processing window ID:", windowId, "Window found:", window ~= nil)
         if window then
             local app = window:application()
+            
+            -- Capture window snapshot
+            local snapshot = nil
+            if not window:isMinimized() then
+                local snapshotImage = window:snapshot()
+                print("Snapshot for window ID:", windowId, "Image:", snapshotImage ~= nil)
+                if snapshotImage then
+                    snapshot = snapshotImage:encodeAsURLString()
+                end
+            end
+            
             table.insert(windows, {
                 id = tostring(windowId),
                 title = window:title() or "Untitled",
                 application = app and app:name() or "Unknown",
                 isMinimized = window:isMinimized(),
-                isFullscreen = window:isFullscreen()
+                isFullscreen = window:isFullscreen(),
+                snapshot = snapshot
             })
           end
     end
@@ -193,6 +205,7 @@ export async function getAllWindows(): Promise<Window[]> {
         local app = window:application()
         local appName = app and app:name() or "Unknown"
         local windowTitle = window:title() or "Untitled"
+        print("Processing window:", windowTitle, "App:", appName, "ID:", window:id())
         
         -- Skip Raycast windows
         if appName ~= "Raycast" then
@@ -217,7 +230,20 @@ export async function getAllWindows(): Promise<Window[]> {
 export async function focusWindow(windowId: string): Promise<void> {
   const code = /* lua */ `
     local windowId = tonumber(${windowId})
-    local window = hs.window.get(windowId)
+
+    local windowFilter = hs.window.filter.new()
+    local allWindows = windowFilter:getWindows()
+
+    local window= nil
+    for _, win in ipairs(allWindows) do
+        if win:id() == windowId then
+            window = win
+            break
+        end
+    end
+
+    print("Focusing window with ID:", ${windowId})
+
     
     if not window then
         error("Window not found with ID: " .. tostring(windowId))

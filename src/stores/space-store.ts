@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { Space, Window } from "../types/space";
 import { listSpace, getSpaceWindows, removeSpaceById, gotoSpace, getAllWindows, focusWindow } from "../utils/space";
+import { callHammerspoon } from "../utils/call-hammerspoon";
 import { tryit, sleep } from "radash";
 import { showFailureToast } from "@raycast/utils";
 import { getApplications } from "@raycast/api";
@@ -25,6 +26,12 @@ interface SpaceStore {
   allWindows: Window[];
   /** Loading state for all windows */
   isLoadingAllWindows: boolean;
+  /** Window snapshots cache, keyed by window ID */
+  windowSnapshots: Record<string, string>;
+  /** Loading state for window snapshots, keyed by window ID */
+  loadingSnapshots: Record<string, boolean>;
+  /** Currently selected window ID */
+  selectedWindowId: string | null;
 
   /** Fetch all spaces from the system */
   fetchSpaces: () => Promise<void>;
@@ -42,6 +49,10 @@ interface SpaceStore {
   fetchAllWindows: () => Promise<void>;
   /** Focus a window by ID */
   focusWindow: (windowId: string) => Promise<void>;
+  /** Fetch snapshot for a specific window */
+  fetchWindowSnapshot: (windowId: string) => Promise<void>;
+  /** Set the currently selected window ID */
+  setSelectedWindowId: (windowId: string | null) => void;
 }
 
 /**
@@ -57,6 +68,9 @@ export const useSpaceStore = create<SpaceStore>((set, get) => ({
   appIcons: {},
   allWindows: [],
   isLoadingAllWindows: false,
+  windowSnapshots: {},
+  loadingSnapshots: {},
+  selectedWindowId: null,
 
   /**
    * Fetch all spaces from the system
@@ -243,5 +257,90 @@ export const useSpaceStore = create<SpaceStore>((set, get) => ({
       showFailureToast(err);
       return;
     }
+  },
+
+  /**
+   * Fetch snapshot for a specific window
+   * @param windowId - The ID of the window to fetch snapshot for
+   * @returns Promise that resolves when the snapshot is fetched
+   */
+  fetchWindowSnapshot: async (windowId: string) => {
+    const { windowSnapshots, loadingSnapshots } = get();
+
+    // Don't fetch if already loading or already have snapshot
+    if (loadingSnapshots[windowId] || windowSnapshots[windowId]) {
+      return;
+    }
+
+    set((state) => ({
+      loadingSnapshots: { ...state.loadingSnapshots, [windowId]: true },
+    }));
+
+    const [err, snapshot] = await tryit(async () => {
+      const code = /* lua */ `
+        local windowId = tonumber(${windowId})
+        local windowFilter = hs.window.filter.new()
+        local allWindows = windowFilter:getWindows()
+        
+        local window = nil
+        for _, win in ipairs(allWindows) do
+            if win:id() == windowId then
+                window = win
+                break
+            end
+        end
+        
+        if not window then
+            error("Window not found with ID: " .. tostring(windowId))
+        end
+        
+        if window:isMinimized() then
+            return nil
+        end
+        
+        local snapshotImage = window:snapshotForID()
+        if snapshotImage then
+            return snapshotImage:encodeAsURLString()
+        end
+        
+        return nil
+      `;
+
+      return await callHammerspoon(code);
+    })();
+
+    set((state) => ({
+      loadingSnapshots: { ...state.loadingSnapshots, [windowId]: false },
+    }));
+
+    if (err) {
+      console.error("Failed to fetch window snapshot:", err);
+      return;
+    }
+
+    if (snapshot) {
+      set((state) => ({
+        windowSnapshots: { ...state.windowSnapshots, [windowId]: snapshot },
+      }));
+    }
+  },
+
+  /**
+   * Set the currently selected window ID
+   * @param windowId - The ID of the window to select, or null to deselect
+   */
+  setSelectedWindowId: (windowId: string | null) => {
+    console.log("🚀 ~ space-store.ts:333 ~ windowId:", windowId);
+
+    // TODO performance issue
+    // set({ selectedWindowId: windowId });
+
+    // if (windowId) {
+    //   const { windowSnapshots, loadingSnapshots } = get();
+    //   // Only fetch snapshot if we don't already have it
+    //   if (!windowSnapshots[windowId] && !loadingSnapshots[windowId]) {
+    //     get().fetchWindowSnapshot(windowId);
+    //   }
+    // }
   },
 }));

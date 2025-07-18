@@ -12,4 +12,5 @@ export interface Window {
   application: string;
   isMinimized: boolean;
   isFullscreen: boolean;
+  snapshot?: string; // Base64 encoded image data
 }

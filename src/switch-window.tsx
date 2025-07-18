@@ -1,17 +1,48 @@
 import { ActionPanel, Action, Icon, List, Image } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { useSpaceStore } from "./stores/space-store";
+import { Window } from "./types/space";
 
 interface WindowItemProps {
-  window: {
-    id: string;
-    title: string;
-    application: string;
-    isMinimized: boolean;
-    isFullscreen: boolean;
-  };
+  window: Window;
   appIcon?: string;
   onFocus: (windowId: string) => void;
+}
+
+// Window detail component
+function WindowDetail({ window }: { window: Window }) {
+  const { windowSnapshots, loadingSnapshots } = useSpaceStore();
+  const snapshot = windowSnapshots[window.id];
+  const isLoadingSnapshot = loadingSnapshots[window.id];
+
+  const getMarkdown = () => {
+    if (snapshot && !window.isMinimized) {
+      return `![Window Preview](${snapshot})`;
+    } else if (isLoadingSnapshot) {
+      return `Loading snapshot...`;
+    } else if (window.isMinimized) {
+      return `Window is minimized - no preview available`;
+    } else {
+      return `No preview available`;
+    }
+  };
+
+  return (
+    <List.Item.Detail
+      markdown={getMarkdown()}
+      metadata={
+        <List.Item.Detail.Metadata>
+          <List.Item.Detail.Metadata.Label title="Title" text={window.title} />
+          <List.Item.Detail.Metadata.Label title="Application" text={window.application} />
+          <List.Item.Detail.Metadata.Label title="ID" text={window.id} />
+          <List.Item.Detail.Metadata.Label
+            title="Status"
+            text={window.isMinimized ? "Minimized" : window.isFullscreen ? "Fullscreen" : "Normal"}
+          />
+        </List.Item.Detail.Metadata>
+      }
+    />
+  );
 }
 
 function WindowItem({ window, appIcon, onFocus }: WindowItemProps) {
@@ -42,6 +73,7 @@ function WindowItem({ window, appIcon, onFocus }: WindowItemProps) {
       subtitle={window.application}
       accessories={getAccessories()}
       id={window.id}
+      detail={<WindowDetail window={window} />}
       actions={
         <ActionPanel>
           <Action title="Focus Window" icon={Icon.Eye} onAction={() => onFocus(window.id)} />
@@ -62,7 +94,8 @@ function WindowItem({ window, appIcon, onFocus }: WindowItemProps) {
 }
 
 export default function Command() {
-  const { allWindows, isLoadingAllWindows, appIcons, fetchAllWindows, focusWindow } = useSpaceStore();
+  const { allWindows, isLoadingAllWindows, appIcons, fetchAllWindows, focusWindow, setSelectedWindowId } =
+    useSpaceStore();
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
@@ -71,6 +104,10 @@ export default function Command() {
 
   const handleFocus = async (windowId: string) => {
     await focusWindow(windowId);
+  };
+
+  const handleSelectionChange = (windowId: string | null) => {
+    setSelectedWindowId(windowId);
   };
 
   const filteredWindows = allWindows.filter(
@@ -84,6 +121,8 @@ export default function Command() {
       isLoading={isLoadingAllWindows}
       onSearchTextChange={setSearchText}
       searchBarPlaceholder="Search windows by title or application..."
+      isShowingDetail={false}
+      onSelectionChange={handleSelectionChange}
       throttle
     >
       {filteredWindows.map((window) => (

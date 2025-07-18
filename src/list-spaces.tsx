@@ -9,16 +9,35 @@ function WindowList({ windows, appIcons }: { windows: Window[]; appIcons: Record
   return (
     <>
       {windows.map((window: Window) => (
-        <List.Item.Detail.Metadata.Label
-          key={window.id}
-          title={window.application}
-          text={window.title.length > 40 ? `${window.title.substring(0, 40)}...` : window.title}
-          icon={{
-            fileIcon:
-              appIcons[window.application] ||
-              (window.isMinimized ? Icon.Minus : window.isFullscreen ? Icon.Maximize : Icon.Window),
-          }}
-        />
+        <div key={window.id}>
+          <List.Item.Detail.Metadata.Label
+            title={window.application}
+            text={window.title.length > 40 ? `${window.title.substring(0, 40)}...` : window.title}
+            icon={{
+              fileIcon:
+                appIcons[window.application] ||
+                (window.isMinimized ? Icon.Minus : window.isFullscreen ? Icon.Maximize : Icon.Window),
+            }}
+          />
+          {window.snapshot && !window.isMinimized && (
+            <List.Item.Detail.Metadata.Label
+              title=""
+              text=""
+              icon={{
+                source: window.snapshot,
+              }}
+            />
+          )}
+          {window.isMinimized && (
+            <List.Item.Detail.Metadata.Label
+              title=""
+              text="Window is minimized - no preview available"
+              icon={{
+                source: Icon.Minus,
+              }}
+            />
+          )}
+        </div>
       ))}
     </>
   );
