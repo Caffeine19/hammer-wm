@@ -13,6 +13,17 @@ export function removeSpace(spaceId: Space["id"]) {
   return callHammerspoon(code);
 }
 
+export function removeSpaceById(spaceId: Space["id"]) {
+  const code = /* lua */ `
+    local ok, err = hs.spaces.removeSpace(${spaceId})
+    if not ok then
+        print("Remove failed: " .. tostring(err))
+        error("Failed to remove space: " .. tostring(err))
+    end
+  `;
+  return callHammerspoon(code);
+}
+
 export async function removeCurrentSpace() {
   const code = /* lua */ `
     local currentScreen = hs.screen.mainScreen()
