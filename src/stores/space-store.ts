@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Space, Window } from "../types/space";
-import { listSpace, getSpaceWindows, removeSpaceById, gotoSpace } from "../utils/space";
+import { listSpace, getSpaceWindows, removeSpaceById, gotoSpace, getAllWindows, focusWindow } from "../utils/space";
 import { tryit, sleep } from "radash";
 import { showFailureToast } from "@raycast/utils";
 import { getApplications } from "@raycast/api";
@@ -21,6 +21,10 @@ interface SpaceStore {
   selectedSpaceId: string | null;
   /** Application icons cache, keyed by application name */
   appIcons: Record<string, string>;
+  /** All windows from all spaces */
+  allWindows: Window[];
+  /** Loading state for all windows */
+  isLoadingAllWindows: boolean;
 
   /** Fetch all spaces from the system */
   fetchSpaces: () => Promise<void>;
@@ -34,6 +38,10 @@ interface SpaceStore {
   goToSpace: (spaceId: string) => Promise<void>;
   /** Set the currently selected space ID */
   setSelectedSpaceId: (spaceId: string | null) => void;
+  /** Fetch all windows from all spaces */
+  fetchAllWindows: () => Promise<void>;
+  /** Focus a window by ID */
+  focusWindow: (windowId: string) => Promise<void>;
 }
 
 /**
@@ -47,6 +55,8 @@ export const useSpaceStore = create<SpaceStore>((set, get) => ({
   loadingWindows: {},
   selectedSpaceId: null,
   appIcons: {},
+  allWindows: [],
+  isLoadingAllWindows: false,
 
   /**
    * Fetch all spaces from the system
@@ -198,6 +208,40 @@ export const useSpaceStore = create<SpaceStore>((set, get) => ({
       if (!spaceWindows[spaceId] && !loadingWindows[spaceId]) {
         get().fetchSpaceWindows(spaceId);
       }
+    }
+  },
+
+  /**
+   * Fetch all windows from all spaces
+   * @returns Promise that resolves when all windows are fetched
+   */
+  fetchAllWindows: async () => {
+    set({ isLoadingAllWindows: true });
+    const [err, windows] = await tryit(getAllWindows)();
+    set({ isLoadingAllWindows: false });
+
+    if (err) {
+      showFailureToast(err);
+      return;
+    }
+
+    set({ allWindows: windows });
+
+    // Fetch app icons for all unique applications
+    const uniqueApps = Array.from(new Set(windows.map((w) => w.application)));
+    get().fetchApplicationIcons(uniqueApps);
+  },
+
+  /**
+   * Focus a window by ID
+   * @param windowId - The ID of the window to focus
+   * @returns Promise that resolves when the window is focused
+   */
+  focusWindow: async (windowId: string) => {
+    const [err] = await tryit(focusWindow)(windowId);
+    if (err) {
+      showFailureToast(err);
+      return;
     }
   },
 }));

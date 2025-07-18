@@ -178,3 +178,60 @@ export async function getSpaceWindows(spaceId: Space["id"]): Promise<Window[]> {
   const result = await callHammerspoon(code);
   return JSON.parse(result);
 }
+
+export async function getAllWindows(): Promise<Window[]> {
+  const code = /* lua */ `
+    local windows = {}
+    
+    -- Get all windows from all spaces
+    local windowFilter = hs.window.filter.new()
+    local allWindows = windowFilter:getWindows()
+    
+    print("Found", #allWindows, "total windows")
+    
+    for _, window in ipairs(allWindows) do
+        local app = window:application()
+        local appName = app and app:name() or "Unknown"
+        local windowTitle = window:title() or "Untitled"
+        
+        -- Skip Raycast windows
+        if appName ~= "Raycast" then
+            table.insert(windows, {
+                id = tostring(window:id()),
+                title = windowTitle,
+                application = appName,
+                isMinimized = window:isMinimized(),
+                isFullscreen = window:isFullscreen()
+            })
+        end
+    end
+    
+    print("Returning", #windows, "windows (excluding Raycast)")
+    return hs.json.encode(windows)
+  `;
+
+  const result = await callHammerspoon(code);
+  return JSON.parse(result);
+}
+
+export async function focusWindow(windowId: string): Promise<void> {
+  const code = /* lua */ `
+    local windowId = tonumber(${windowId})
+    local window = hs.window.get(windowId)
+    
+    if not window then
+        error("Window not found with ID: " .. tostring(windowId))
+    end
+    
+    -- Focus the window
+    window:focus()
+    
+    -- Also bring the application to front
+    local app = window:application()
+    if app then
+        app:activate()
+    end
+  `;
+
+  await callHammerspoon(code);
+}

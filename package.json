@@ -35,6 +35,13 @@
       "subtitle": "HammerWM",
       "description": "Create a new space",
       "mode": "no-view"
+    },
+    {
+      "name": "switch-window",
+      "title": "Switch Window",
+      "subtitle": "HammerWM",
+      "description": "Switch window from all spaces",
+      "mode": "view"
     }
   ],
   "dependencies": {
