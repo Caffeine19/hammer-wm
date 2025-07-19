@@ -5,40 +5,38 @@ import { group } from "radash";
 import { useSpaceStore } from "./stores/space-store";
 
 // Window display component
-function WindowList({ windows, appIcons }: { windows: Window[]; appIcons: Record<string, string> }) {
+function WindowInfo({ window, appIcons }: { window: Window; appIcons: Record<string, string> }) {
   return (
     <>
-      {windows.map((window: Window) => (
-        <div key={window.id}>
-          <List.Item.Detail.Metadata.Label
-            title={window.application}
-            text={window.title.length > 40 ? `${window.title.substring(0, 40)}...` : window.title}
-            icon={{
-              fileIcon:
-                appIcons[window.application] ||
-                (window.isMinimized ? Icon.Minus : window.isFullscreen ? Icon.Maximize : Icon.Window),
-            }}
-          />
-          {window.snapshot && !window.isMinimized && (
-            <List.Item.Detail.Metadata.Label
-              title=""
-              text=""
-              icon={{
-                source: window.snapshot,
-              }}
-            />
-          )}
-          {window.isMinimized && (
-            <List.Item.Detail.Metadata.Label
-              title=""
-              text="Window is minimized - no preview available"
-              icon={{
-                source: Icon.Minus,
-              }}
-            />
-          )}
-        </div>
-      ))}
+      <List.Item.Detail.Metadata.Label
+        title={window.application}
+        text={window.title.length > 40 ? `${window.title.substring(0, 40)}...` : window.title}
+        icon={{
+          fileIcon:
+            appIcons[window.application] ||
+            (window.isMinimized ? Icon.Minus : window.isFullscreen ? Icon.Maximize : Icon.Window),
+        }}
+      />
+
+      {window.snapshot && !window.isMinimized && (
+        <List.Item.Detail.Metadata.Label
+          title=""
+          text=""
+          icon={{
+            source: window.snapshot,
+          }}
+        />
+      )}
+
+      {window.isMinimized && (
+        <List.Item.Detail.Metadata.Label
+          title=""
+          text="Window is minimized - no preview available"
+          icon={{
+            source: Icon.Minus,
+          }}
+        />
+      )}
     </>
   );
 }
@@ -75,7 +73,9 @@ function SpaceDetail({
             title="Windows"
             text={isLoadingSpaceWindows ? "Loading..." : `${windows.length} windows`}
           />
-          <WindowList windows={windows} appIcons={appIcons} />
+          {windows.map((window) => (
+            <WindowInfo window={window} appIcons={appIcons} />
+          ))}
           <List.Item.Detail.Metadata.Separator />
           <List.Item.Detail.Metadata.Label title="Available Actions" text="" />
           <List.Item.Detail.Metadata.Label title="• Go to Space" text="Press ⏎" />
